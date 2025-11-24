@@ -177,30 +177,6 @@ cache_dir = Path.home() / '.cache' / 'huggingface'
 cache_dir = "/home/user/.cache/huggingface"
 ```
 
-### 平台特定配置
-
-#### Linux
-```bash
-# 推荐使用XDG标准
-export XDG_CACHE_HOME=~/.cache
-export HF_HOME=$XDG_CACHE_HOME/huggingface
-```
-
-#### macOS
-```bash
-# 与Linux相同
-export HF_HOME=~/.cache/huggingface
-```
-
-#### Windows
-```powershell
-# PowerShell
-$env:HF_HOME="$env:USERPROFILE\.cache\huggingface"
-
-# CMD
-set HF_HOME=%USERPROFILE%\.cache\huggingface
-```
-
 ## 使用HuggingFace镜像
 
 ### 中国大陆用户推荐配置
@@ -211,17 +187,6 @@ export HF_ENDPOINT=https://hf-mirror.com
 
 # 验证配置
 python -c "import os; print(os.getenv('HF_ENDPOINT'))"
-```
-
-### 测试镜像连接
-
-```bash
-# 下载一个小模型测试
-python -c "
-from transformers import AutoTokenizer
-tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
-print('✅ 镜像连接成功')
-"
 ```
 
 ## 常见问题
@@ -295,14 +260,6 @@ export HF_HOME=/new/path/huggingface
 # 方法2：创建符号链接
 ln -s /new/path/huggingface ~/.cache/huggingface
 ```
-
-## 最佳实践
-
-1. **开发环境**：使用默认路径，无需配置
-2. **生产环境**：通过环境变量配置路径，确保可控
-3. **离线部署**：提前下载所有模型，启用离线模式
-4. **多用户环境**：每个用户使用独立的`HF_HOME`
-5. **CI/CD流水线**：在Docker中设置`HF_HOME`到固定路径
 
 ## 示例配置
 

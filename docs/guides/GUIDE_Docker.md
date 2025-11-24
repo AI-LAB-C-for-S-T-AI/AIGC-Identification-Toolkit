@@ -248,7 +248,7 @@ sudo docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
 
 #### 问题：为什么项目的`models/`目录是空的？
 
-**答案**：因为你的模型实际存储在 `/fs-computility/wangxuhong/limeilin/.cache/huggingface`
+**答案**：因为你的模型实际存储在 `/gotoyourpath/.cache/huggingface`
 
 #### 解决方案：通过Volume挂载
 
@@ -257,7 +257,7 @@ sudo docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
 ```yaml
 volumes:
   # 主机路径 → 容器路径
-  - /fs-computility/wangxuhong/limeilin/.cache/huggingface:/cache/huggingface
+  - /gotoyourpath/.cache/huggingface:/cache/huggingface
 ```
 
 然后通过环境变量告诉项目使用这个路径：
@@ -610,19 +610,3 @@ docker-compose build
 docker-compose build --pull
 ```
 
-
-
-## 📝 附录：常用命令一览表
-
-| 场景 | 命令 |
-|-----|------|
-| 构建镜像 | `docker-compose build` |
-| 进入容器 | `docker-compose run --rm toolkit bash` |
-| 运行测试 | `docker-compose run --rm toolkit python -m pytest tests/ -v` |
-| 查看GPU | `docker-compose run --rm toolkit nvidia-smi` |
-| CPU模式 | `docker-compose run --rm -e CUDA_VISIBLE_DEVICES="" toolkit python ...` |
-| 多GPU | `docker-compose run --rm -e CUDA_VISIBLE_DEVICES=0,1 toolkit python ...` |
-| 停止容器 | `docker-compose down` |
-| 清理缓存 | `docker system prune -a` |
-| 查看日志 | `docker-compose logs -f toolkit` |
-| 重新构建 | `docker-compose build --no-cache` |
