@@ -45,7 +45,7 @@ FROM dependencies AS builder
 # 复制项目代码
 COPY . .
 
-# 生产镜像不需要 14GB benchmark 子模块，跳过下载以减小镜像大小
+
 # 开发者可以在本地手动初始化子模块: git submodule update --init --recursive
 # RUN git submodule update --init --recursive || echo "Git submodules initialization skipped"
 
