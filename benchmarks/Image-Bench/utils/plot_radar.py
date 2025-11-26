@@ -60,15 +60,6 @@ METRICS_CONFIG = {
         'ylim': (0.5, 1.0),
         'yticks': [0.6, 0.7, 0.8, 0.9, 1.0],
         'normalize': False
-    },
-    'avg_confidence': {
-        'name': 'Average Confidence Score',
-        'filename': 'videoseal_avg_confidence_radar.png',
-        'ylim': (0, 1.0),  # Normalized to [0, 1]
-        'yticks': [0.2, 0.4, 0.6, 0.8, 1.0],  # Normalized ticks
-        'ytick_labels': ['5', '10', '15', '20', '25'],  # Original scale labels
-        'normalize': True,
-        'normalize_factor': 25.0
     }
 }
 

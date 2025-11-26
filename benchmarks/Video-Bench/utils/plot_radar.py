@@ -74,14 +74,6 @@ METRICS_CONFIG = {
         'yticks': [0.86, 0.88, 0.90, 0.92, 0.94, 0.96, 0.98, 1.0],
         'normalize': False,
         'description': 'Higher is better'
-    },
-    'avg_confidence': {
-        'name': 'Average Confidence Score',
-        'filename': 'videoseal_avg_confidence_radar.png',
-        'ylim': (0, 1.0),
-        'yticks': [0.2, 0.4, 0.6, 0.8, 1.0],
-        'normalize': False,
-        'description': 'Higher is better (normalized to [0, 1])'
     }
 }
 

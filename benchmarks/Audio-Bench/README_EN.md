@@ -39,12 +39,13 @@ python benchmarks/Audio-Bench/run_benchmark.py
 
 ## 📊 Evaluation Pipeline
 
-### Supported Attack Types (8 types × 5 strengths = 40 configurations)
+### Supported Attack Types (9 types × 5 strengths = 45 configurations)
 
 | Attack Type | Strength Parameters | Description |
 |---------|---------|------|
 | **Gaussian Noise** | [40, 30, 20, 10, 5] | Gaussian noise (SNR in dB, lower = stronger attack) |
 | **Background Noise** | [40, 30, 20, 10, 5] | Background noise (SNR in dB) |
+| **Time Stretch** | [0.8, 0.9, 1.0, 1.1, 1.2] | Time stretching (speed factor, 1.0 = original speed) |
 | **Quantization** | [4, 8, 16, 32, 64] | Quantization (bit levels, lower = stronger attack) |
 | **Lowpass Filter** | [0.1, 0.2, 0.3, 0.4, 0.5] | Low-pass filtering (cutoff frequency ratio) |
 | **Highpass Filter** | [0.1, 0.2, 0.3, 0.4, 0.5] | High-pass filtering (cutoff frequency ratio) |
@@ -52,33 +53,47 @@ python benchmarks/Audio-Bench/run_benchmark.py
 | **Echo** | [(0.1,0.1), ..., (0.5,0.5)] | Echo (delay in seconds, volume) |
 | **MP3 Compression** | [64, 96, 128, 192, 256] | MP3 compression (bitrate kbps, lower = stronger attack) |
 
+Covers common noise, frequency domain filtering, time stretching, and compression distortions for comprehensive audio watermark robustness testing.
+
 ### Evaluation Metrics
 
-#### Quality Metrics (Original Audio vs Watermarked Audio)
-- **SNR (Signal-to-Noise Ratio)**: Signal-to-noise ratio in dB, higher is better (typically >40dB indicates high quality)
-
-#### Robustness Metrics (By Attack Type and Strength)
-- **TPR (prob)**: True Positive Rate based on detection probability, detection probability > `tau_prob`(0.15) is considered successful detection
-- **TPR (BA)**: True Positive Rate based on bit accuracy, bit accuracy > `tau_ba`(0.1) is considered successful detection
-- **Bit Accuracy**: Bit accuracy, ratio of correctly extracted watermark bits to total bits (0-1)
-- **Average Confidence**: Average confidence when detection succeeds (0-1)
+| Metric Category | Metric | Threshold | Description |
+|----------|------|----------|----------|
+| **Quality** | SNR | ≥ 20.0 dB | Signal-to-Noise Ratio, original audio vs watermarked audio, higher is better |
+| **Robustness** | TPR (Detection Probability) | ≥ 0.80 | True Positive Rate determined by detection probability |
+| **Robustness** | Bit Accuracy | ≥ 0.875 | Pattern watermark bit accuracy, higher is better |
 
 
 ---
 
 ## 📈 Visualization Analysis
 
+Generate radar charts:
 
 ```bash
 python benchmarks/Audio-Bench/utils/plot_radar.py \
   benchmarks/Audio-Bench/results/audioseal_robustness/metrics.json
 ```
 
-| TPR (Detection Probability) | Avg Confidence | Bit Accuracy |
-| --- | --- | --- |
-| ![TPR prob](results/audioseal_robustness/audioseal_tpr_prob_radar.png) | ![TPR BA](results/audioseal_robustness/audioseal_avg_confidence_radar.png) | ![Bit Accuracy](results/audioseal_robustness/audioseal_bit_accuracy_radar.png) |
+<table>
+  <tr>
+    <th>TPR (Detection Probability)</th>
+    <th>Bit Accuracy</th>
+    <th>Quality Metrics</th>
+  </tr>
+  <tr>
+    <td><img src="results/audioseal_robustness/audioseal_tpr_prob_radar.png" alt="AudioSeal TPR Probability Radar" /></td>
+    <td><img src="results/audioseal_robustness/audioseal_bit_accuracy_radar.png" alt="AudioSeal Bit Accuracy Radar" /></td>
+    <td style="vertical-align: top; height: 100%;">
+      <table>
+        <tr><th>Metric</th><th>Value</th><th style="white-space: nowrap;">Meets Threshold</th></tr>
+        <tr><td><strong>SNR</strong></td><td>23</td><td>✅</td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
-Each chart displays **5 curves** corresponding to 5 attack strength levels (from weak to strong).
+> Each radar chart displays **5 curves** corresponding to 5 attack strength levels (from weak to strong).
 
 
 
@@ -93,3 +108,4 @@ This project is based on the following open source works:
 - **[Image-Bench](../Image-Bench/)** - Evaluation pipeline architecture design reference
 
 ---
+

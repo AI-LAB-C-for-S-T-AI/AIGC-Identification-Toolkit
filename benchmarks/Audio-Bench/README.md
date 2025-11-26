@@ -53,32 +53,47 @@ python benchmarks/Audio-Bench/run_benchmark.py
 | **Echo** | [(0.1,0.1), ..., (0.5,0.5)] | 回声（延迟秒数, 音量） |
 | **MP3 Compression** | [64, 96, 128, 192, 256] | MP3压缩（比特率 kbps，越低攻击越强） |
 
+覆盖常见噪声、频域滤波、时间伸缩与压缩失真，全面检验音频水印鲁棒性。
+
 ### 评估指标
 
-#### 质量指标（原音频 vs 水印音频）
-- **SNR (Signal-to-Noise Ratio)**: 信噪比，单位 dB，越高越好（通常>40dB表示高质量）
-
-#### 鲁棒性指标（按攻击类型和强度）
-- **TPR (prob)**: 基于检测概率的真阳性率，检测概率 > `tau_prob`(0.15) 即判定为检测成功
-- **Bit Accuracy**: 位准确率，正确提取的水印比特数占总比特数的比例（0-1）
-- **Average Confidence**: 检测成功时的平均置信度（0-1）
+| 指标类别 | 指标 | 判定阈值 | 指标说明 |
+|----------|------|----------|----------|
+| **质量** | SNR | ≥ 20.0 dB | Signal-to-Noise Ratio，原音频 vs 水印音频，越高越好 |
+| **鲁棒性** | TPR (Detection Probability) | ≥ 0.80 | 以检测概率判定的真阳性率 |
+| **鲁棒性** | Bit Accuracy | ≥ 0.875 | 图案水印比特正确率，越高越好 |
 
 
 ---
 
 ## 📈 可视化分析
 
+生成雷达图：
 
 ```bash
 python benchmarks/Audio-Bench/utils/plot_radar.py \
   benchmarks/Audio-Bench/results/audioseal_robustness/metrics.json
 ```
 
-| TPR (Detection Probability) | Avg Confidence | Bit Accuracy |
-| --- | --- | --- |
-| ![TPR prob](results/audioseal_robustness/audioseal_tpr_prob_radar.png) | ![TPR BA](results/audioseal_robustness/audioseal_avg_confidence_radar.png) | ![Bit Accuracy](results/audioseal_robustness/audioseal_bit_accuracy_radar.png) |
+<table>
+  <tr>
+    <th>TPR (Detection Probability)</th>
+    <th>Bit Accuracy</th>
+    <th>质量评估指标</th>
+  </tr>
+  <tr>
+    <td><img src="results/audioseal_robustness/audioseal_tpr_prob_radar.png" alt="AudioSeal TPR Probability Radar" /></td>
+    <td><img src="results/audioseal_robustness/audioseal_bit_accuracy_radar.png" alt="AudioSeal Bit Accuracy Radar" /></td>
+    <td style="vertical-align: top; height: 100%;">
+      <table>
+        <tr><th>指标</th><th>数值</th><th style="white-space: nowrap;">达到阈值</th></tr>
+        <tr><td><strong>SNR</strong></td><td>23</td><td>✅</td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
-每张图显示 **5条曲线**，对应 5个攻击强度级别（从弱到强）。
+> 每张雷达图展示 **5 条曲线**，对应 5 个攻击强度等级（从弱到强）。
 
 
 

@@ -98,193 +98,43 @@ This project provides an all-in-one open-source identification toolkit. Supporti
    ```
 #### 🐳 Docker Installation (Recommended)
 
-Docker is the recommended installation method, providing a ready-to-use environment without manual dependency configuration.
+**Prerequisites**: Requires NVIDIA GPU and [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
 
-##### Prerequisites
-
-1. **NVIDIA GPU and Drivers**
-   ```bash
-   # Check GPU and CUDA version
-   nvidia-smi
-   # Requires CUDA 11.8 or higher
-   ```
-
-2. **NVIDIA Container Toolkit**
-   ```bash
-   # Ubuntu/Debian installation
-   distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-   curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
-   curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
-     sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-     sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
-   sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
-   sudo systemctl restart docker
-
-   # Verify installation
-   docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
-   ```
-
-3. **Docker and Docker Compose**
-   - Docker Engine >= 20.10
-   - Docker Compose >= 2.0
-
-##### Quick Start
-
-1. **Clone the repository**
-   ```bash
-   git clone --depth 1 https://github.com/MillionMillionLi/AIGC-Identification-Toolkit.git
-   cd AIGC-Identification-Toolkit
-   ```
-
-2. **Start the container** (automatically pulls pre-built image)
+1. Start the container
    ```bash
    docker compose up -d
    ```
+   First launch will automatically pull the pre-built image from [DockerHub](https://hub.docker.com/r/millionmillionli/aigc-identification-toolkit) (~8GB)
 
-   First launch will automatically pull the image from DockerHub (~8GB), taking 5-10 minutes.
+2. (Optional) Prepare AI generation models
 
-3. **Enter the container**
+   This step is only required if you need to use AI-generated content with watermarking.
+
+   **Required models**:
+   - Image generation: Stable Diffusion 2.1 (`stabilityai/stable-diffusion-2-1-base`)
+   - Video generation: Wan2.1 (`Wan-AI/Wan2.1-T2V-1.3B-Diffusers`)
+   - Text generation: Mistral 7B + PostMark embeddings (`mistralai/Mistral-7B-Instruct-v0.2`)
+   - Audio generation: Bark (`suno/bark`)
+
+   **Model storage location**:
+
+   Docker will automatically search for the host's `~/.cache/huggingface/` directory. If your models are in a different path, modify `docker-compose.yml`:
+
+   ```yaml
+   volumes:
+     # Change the first path to your actual model cache path
+     - /your/path/.cache/huggingface:/cache/huggingface
+   ```
+
+3. Enter the container
    ```bash
    docker exec -it aigc-watermark-toolkit bash
    ```
 
-4. **Run test verification**
-   ```bash
-   # Execute inside container
-   python tests/test_unified_engine.py
-   ```
 
-##### Model Preparation
 
-**On first run, the container will automatically download AI models to the host's `~/.cache/huggingface` directory (~35GB), which may take some time.**
 
-If you already have models downloaded, ensure they're in `~/.cache/huggingface/`. If models are in a different path, modify `docker-compose.yml`:
 
-```yaml
-volumes:
-  - /your/model/path/.cache/huggingface:/cache/huggingface
-```
-
-**Required models**:
-- Image generation: Stable Diffusion 2.1 (`stabilityai/stable-diffusion-2-1-base`)
-- Video generation: Wan2.1 (`Wan-AI/Wan2.1-T2V-1.3B-Diffusers`)
-- Text generation: Mistral 7B (`mistralai/Mistral-7B-Instruct-v0.2`)
-- Audio generation: Bark (`suno/bark`)
-
-##### Configuration Customization
-
-**Adjust GPU memory usage** (if encountering CUDA out of memory):
-
-Edit `config/default_config.yaml`:
-```yaml
-image_watermark:
-  resolution: 320          # Lower resolution (default 512)
-  num_inference_steps: 20  # Reduce inference steps (default 30)
-```
-
-**Enable offline mode** (no network environment):
-
-Edit `docker-compose.yml`, uncomment these lines:
-```yaml
-environment:
-  - TRANSFORMERS_OFFLINE=1
-  - HF_HUB_OFFLINE=1
-```
-
-**Mirror acceleration (for China)**:
-
-Uncomment in `docker-compose.yml`:
-```yaml
-environment:
-  - HF_ENDPOINT=https://hf-mirror.com
-```
-
-##### Troubleshooting
-
-<details>
-<summary><b>Q: Container fails to start "could not select device driver"</b></summary>
-
-**Cause**: nvidia-docker2 not installed or incorrectly configured
-
-**Solution**:
-```bash
-sudo apt-get install -y nvidia-docker2
-sudo systemctl restart docker
-```
-</details>
-
-<details>
-<summary><b>Q: CUDA out of memory error</b></summary>
-
-**Cause**: Insufficient GPU memory
-
-**Solution**:
-1. Lower generation parameters (see "Configuration Customization" above)
-2. Or add environment variable:
-   ```yaml
-   environment:
-     - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
-   ```
-</details>
-
-<details>
-<summary><b>Q: Model download fails or is slow</b></summary>
-
-**Solution**:
-1. Use mirror acceleration (see "Configuration Customization" above)
-2. Or enable offline mode and manually download models to `~/.cache/huggingface/`
-</details>
-
-<details>
-<summary><b>Q: Permission errors inside container</b></summary>
-
-**Cause**: UID/GID mismatch
-
-**Solution**: Container uses UID 1000, ensure host user UID is 1000, or modify UID in Dockerfile
-</details>
-
-<details>
-<summary><b>Q: How to update to the latest version</b></summary>
-
-```bash
-docker compose pull
-docker compose up -d
-```
-</details>
-
-##### Developer Mode
-
-If you need to modify code or build from source:
-
-1. **Edit `docker-compose.yml`**:
-   ```yaml
-   # Comment out this line
-   # image: millionmillionli/aigc-identification-toolkit:latest
-
-   # Uncomment these lines
-   build:
-     context: .
-     dockerfile: Dockerfile
-   ```
-
-2. **Build and start**:
-   ```bash
-   docker compose build
-   docker compose up -d
-   ```
-
-3. **Hot code reload**:
-   Source code is mounted via volumes. Changes to the `src/` directory on the host take effect immediately inside the container (no rebuild needed).
-
-##### Image Information
-
-- **DockerHub**: [millionmillionli/aigc-identification-toolkit](https://hub.docker.com/r/millionmillionli/aigc-identification-toolkit)
-- **Image size**: ~8GB (excluding AI models)
-- **Base environment**: PyTorch 2.4.0, CUDA 11.8, Python 3.10
-- **Supported features**: Text/Image/Audio/Video watermarking + explicit marking
-
----
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Usage
 
@@ -402,16 +252,49 @@ Evaluate image watermarking algorithm robustness against traditional distortion 
 **Core Features**:
 -  **Dataset**: W-Bench DISTORTION_1K (1000 images)
 
--  **Evaluation Metrics**: PSNR, SSIM, LPIPS, TPR, Bit accuracy, Confidence
+-  **Evaluation Metrics**: PSNR, SSIM, LPIPS, TPR, Bit accuracy
 
 **Quick Start**:
 ```bash
 python benchmarks/Image-Bench/run_benchmark.py
 ```
+
+**Using Custom Dataset**:
+1. Prepare image data: Place PNG images in a custom directory (e.g., `benchmarks/Image-Bench/dataset/my_dataset/`)
+2. Modify configuration `configs/videoseal_distortion.yaml`:
+   ```yaml
+   dataset:
+     path: benchmarks/Image-Bench/dataset/my_dataset
+   ```
+**Evaluation Metrics**
+| Metric Category | Metric | Threshold | Description |
+|----------|------|----------|----------|
+| **Quality** | PSNR | ≥ 35.0 dB | Peak Signal-to-Noise Ratio, higher is better |
+| **Quality** | SSIM | ≥ 0.95 | Structural Similarity Index, closer to 1 is better |
+| **Quality** | LPIPS | ≤ 0.015 | Learned Perceptual Similarity, lower is better |
+| **Robustness** | TPR | ≥ 0.80 | True Positive Rate (detection success rate), higher indicates stronger robustness |
+| **Robustness** | Bit Accuracy | ≥ 0.85 | Watermark bit accuracy, determines closeness of decoded result to original watermark |
+
 **Result Analysis**:
-|  |  |  |
-| --- | --- | --- |
-| ![VideoSeal Avg Confidence Radar](benchmarks/Image-Bench/results/videoseal_distortion/videoseal_avg_confidence_radar.png) | ![VideoSeal Bit Accuracy Radar](benchmarks/Image-Bench/results/videoseal_distortion/videoseal_bit_accuracy_radar.png) | ![VideoSeal TPR Radar](benchmarks/Image-Bench/results/videoseal_distortion/videoseal_tpr_radar.png) |
+<table>
+  <tr>
+    <th>TPR</th>
+    <th>Bit Accuracy</th>
+    <th>Quality Metrics</th>
+  </tr>
+  <tr>
+    <td><img src="benchmarks/Image-Bench/results/videoseal_distortion/videoseal_tpr_radar.png" alt="VideoSeal TPR Radar" /></td>
+    <td><img src="benchmarks/Image-Bench/results/videoseal_distortion/videoseal_bit_accuracy_radar.png" alt="VideoSeal Bit Accuracy Radar" /></td>
+    <td style="vertical-align: top; height: 100%;">
+      <table>
+        <tr><th>Metric</th><th>Value</th><th style="white-space: nowrap;">Meets Threshold</th></tr>
+        <tr><td><strong>PSNR</strong></td><td>45.52 dB</td><td>✅</td></tr>
+        <tr><td><strong>SSIM</strong></td><td>0.9953</td><td>✅</td></tr>
+        <tr><td><strong>LPIPS</strong></td><td>0.0025</td><td>✅</td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
 **Detailed Documentation**: [benchmarks/Image-Bench/README.md](benchmarks/Image-Bench/README.md)
 
@@ -423,7 +306,6 @@ Evaluate the robustness of audio watermarking algorithms (AudioSeal) against var
 
 **Core Features**:
 - 📊 **Dataset**: [AudioMark Dataset](https://drive.google.com/drive/folders/1037mBf4LoGq0CDxe6hYx5fNNv56AY_9e)
-- 🎯 **Evaluation Metrics**: SNR, TPR (prob), TPR (BA), Bit Accuracy, Confidence
 - 🔧 **Attack Types**: Gaussian noise, background noise, quantization, filtering, smoothing, echo, MP3 compression
 
 **Quick Start**:
@@ -431,10 +313,38 @@ Evaluate the robustness of audio watermarking algorithms (AudioSeal) against var
 python benchmarks/Audio-Bench/run_benchmark.py
 ```
 
+**Using Custom Dataset**:
+1. Prepare audio data: Place audio files (supports WAV/MP3/FLAC/M4A) in a custom directory
+2. Modify configuration `configs/audioseal_robustness.yaml`:
+   ```yaml
+   dataset:
+     path: benchmarks/Audio-Bench/dataset/my_audio_dataset
+   ```
+**Evaluation Metrics**
+| Metric Category | Metric | Threshold | Description |
+|----------|------|----------|----------|
+| **Quality** | SNR | ≥ 20.0 dB | Signal-to-Noise Ratio, original audio vs watermarked audio, higher is better |
+| **Robustness** | TPR (Detection Probability) | ≥ 0.80 | True Positive Rate determined by detection probability |
+| **Robustness** | Bit Accuracy | ≥ 0.875 | Pattern watermark bit accuracy, higher is better |
 **Result Analysis**:
-| TPR (Detection Probability) | Avg Confidence | Bit Accuracy |
-| --- | --- | --- |
-| ![TPR prob](benchmarks/Audio-Bench/results/audioseal_robustness/audioseal_tpr_prob_radar.png) | ![Avg Confidence](benchmarks/Audio-Bench/results/audioseal_robustness/audioseal_avg_confidence_radar.png) | ![Bit Accuracy](benchmarks/Audio-Bench/results/audioseal_robustness/audioseal_bit_accuracy_radar.png) |
+<table>
+  <tr>
+    <th>TPR (Detection Probability)</th>
+    <th>Bit Accuracy</th>
+    <th>Quality Metrics</th>
+  </tr>
+  <tr>
+    <td><img src="benchmarks/Audio-Bench/results/audioseal_robustness/audioseal_tpr_prob_radar.png" alt="AudioSeal TPR Probability Radar" /></td>
+    <td><img src="benchmarks/Audio-Bench/results/audioseal_robustness/audioseal_bit_accuracy_radar.png" alt="AudioSeal Bit Accuracy Radar" /></td>
+    <td style="vertical-align: top; height: 100%;">
+      <table>
+        <tr><th>Metric</th><th>Value</th><th style="white-space: nowrap;">Meets Threshold</th></tr>
+        <tr><td><strong>SNR</strong></td><td>23</td><td>✅</td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
 
 **Detailed Documentation**: [benchmarks/Audio-Bench/README.md](benchmarks/Audio-Bench/README.md)
 
@@ -446,7 +356,6 @@ Evaluate the robustness of video watermarking algorithms (VideoSeal) under image
 
 **Core Features**:
 - 📊 **Dataset**: [VideoMarkBench Dataset](https://www.kaggle.com/datasets/zhengyuanjiang/videomarkbench/data)
-- 🎯 **Evaluation Metrics**: PSNR, SSIM, tLP, FNR, Bit Accuracy, Confidence
 - 🔧 **Attack Types**: Gaussian noise, blur, JPEG compression, cropping, frame averaging, frame swapping, frame deletion
 
 **Quick Start**:
@@ -454,10 +363,44 @@ Evaluate the robustness of video watermarking algorithms (VideoSeal) under image
 python benchmarks/Video-Bench/run_benchmark.py
 ```
 
+**Using Custom Dataset**:
+1. Prepare video data: Place video files (supports MP4/AVI/MOV/MKV) in a custom directory, supports subdirectories
+2. Modify configuration `configs/videoseal_robustness.yaml`:
+   ```yaml
+   dataset:
+     path: benchmarks/Video-Bench/dataset/my_video_dataset
+   ```
+
+**Evaluation Metrics**
+
+| Metric Category | Metric | Threshold | Description |
+|----------|------|----------|----------|
+| **Quality** | PSNR | ≥ 35.0 dB | Peak Signal-to-Noise Ratio, higher is better |
+| **Quality** | SSIM | ≥ 0.95 | Structural Similarity Index, closer to 1 is better |
+| **Quality** | tLP | ≤ 0.20 | Temporal LPIPS, measures cross-frame perceptual consistency, lower is better |
+| **Robustness** | FNR | ≤ 0.01 | False Negative Rate (miss detection rate), lower indicates stronger robustness |
+| **Robustness** | Bit Accuracy | ≥ 0.85 | Decoded bit accuracy, higher is better |
+
 **Result Analysis**:
-| FNR | Bit Accuracy | Avg Confidence |
-| --- | --- | --- |
-| ![FNR](benchmarks/Video-Bench/results/videoseal_robustness/videoseal_fnr_radar.png) | ![Bit Accuracy](benchmarks/Video-Bench/results/videoseal_robustness/videoseal_bit_accuracy_radar.png) | ![Avg Confidence](benchmarks/Video-Bench/results/videoseal_robustness/videoseal_avg_confidence_radar.png) |
+<table>
+  <tr>
+    <th>FNR</th>
+    <th>Bit Accuracy</th>
+    <th>Quality Metrics</th>
+  </tr>
+  <tr>
+    <td><img src="benchmarks/Video-Bench/results/videoseal_robustness/videoseal_fnr_radar.png" alt="VideoSeal FNR Radar" /></td>
+    <td><img src="benchmarks/Video-Bench/results/videoseal_robustness/videoseal_bit_accuracy_radar.png" alt="VideoSeal Bit Accuracy Radar" /></td>
+    <td style="vertical-align: top; height: 100%;">
+      <table>
+        <tr><th>Metric</th><th>Value</th><th style="white-space: nowrap;">Meets Threshold</th></tr>
+        <tr><td><strong>PSNR</strong></td><td>40.59</td><td>✅</td></tr>
+        <tr><td><strong>SSIM</strong></td><td>0.97</td><td>✅</td></tr>
+        <tr><td><strong>tLP</strong></td><td>0.001</td><td>✅</td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
 **Detailed Documentation**: [benchmarks/Video-Bench/README.md](benchmarks/Video-Bench/README.md)
 

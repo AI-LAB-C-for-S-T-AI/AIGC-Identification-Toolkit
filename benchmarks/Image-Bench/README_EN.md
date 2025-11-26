@@ -60,31 +60,44 @@ Total: **5 attacks × 5 intensities = 25 configurations**
 
 ### Evaluation Metrics
 
-#### Quality Metrics (Original vs Watermarked Image)
-- **PSNR** (Peak Signal-to-Noise Ratio): Peak signal-to-noise ratio, higher is better (typically >40dB indicates high quality)
-- **SSIM** (Structural Similarity Index): Structural similarity, range 0-1, higher is better
-- **LPIPS** (Learned Perceptual Similarity): Perceptual similarity, lower is better
 
-#### Robustness Metrics (By Attack Type)
-- **TPR (True Positive Rate)**: True positive rate, proportion of correct watermark detections (0-1)
-- **Bit Accuracy**: Bit accuracy rate, proportion of correctly extracted watermark bits to total bits (0-1)
-- **Average Confidence**: Average confidence when detection succeeds
+| Metric Category | Metric | Threshold | Description |
+|----------|------|----------|----------|
+| **Quality** | PSNR | ≥ 35.0 dB | Peak Signal-to-Noise Ratio, higher is better |
+| **Quality** | SSIM | ≥ 0.95 | Structural Similarity Index, closer to 1 is better |
+| **Quality** | LPIPS | ≤ 0.015 | Learned Perceptual Similarity, lower is better |
+| **Robustness** | TPR | ≥ 0.80 | True Positive Rate (detection success rate), higher indicates stronger robustness |
+| **Robustness** | Bit Accuracy | ≥ 0.85 | Watermark bit accuracy, determines closeness of decoded result to original watermark |
 
 ---
 
 ## 📈 Visualization Analysis
 
+Generate radar charts to visualize watermark robustness:
 
 ```bash
 python benchmarks/Image-Bench/utils/plot_radar.py \
     benchmarks/Image-Bench/results/videoseal_distortion/metrics.json
 ```
-
-
-|  |  |  |
-| --- | --- | --- |
-| ![VideoSeal Avg Confidence Radar](results/videoseal_distortion/videoseal_avg_confidence_radar.png) | ![VideoSeal Bit Accuracy Radar](results/videoseal_distortion/videoseal_bit_accuracy_radar.png) | ![VideoSeal TPR Radar](results/videoseal_distortion/videoseal_tpr_radar.png) |
-
+<table>
+  <tr>
+    <th>TPR</th>
+    <th>Bit Accuracy</th>
+    <th>Quality Metrics</th>
+  </tr>
+  <tr>
+    <td><img src="results/videoseal_distortion/videoseal_tpr_radar.png" alt="VideoSeal TPR Radar" /></td>
+    <td><img src="results/videoseal_distortion/videoseal_bit_accuracy_radar.png" alt="VideoSeal Bit Accuracy Radar" /></td>
+    <td style="vertical-align: top; height: 100%;">
+      <table>
+        <tr><th>Metric</th><th>Value</th><th style="white-space: nowrap;">Meets Threshold</th></tr>
+        <tr><td><strong>PSNR</strong></td><td>45.52 dB</td><td>✅</td></tr>
+        <tr><td><strong>SSIM</strong></td><td>0.9953</td><td>✅</td></tr>
+        <tr><td><strong>LPIPS</strong></td><td>0.0025</td><td>✅</td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
 
 
@@ -92,7 +105,7 @@ python benchmarks/Image-Bench/utils/plot_radar.py \
 
 ---
 
-## 🏆 Acknowledgments
+## 🏆 Acknowledgements
 
 This project is based on the following open-source works:
 

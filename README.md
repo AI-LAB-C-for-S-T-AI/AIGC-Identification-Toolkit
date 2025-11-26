@@ -98,78 +98,39 @@
    ```
 #### 🐳 Docker 安装（推荐）
 
-Docker 方式为推荐的安装方式，提供开箱即用的环境，无需手动配置依赖。
+**前置要求**：需要 NVIDIA GPU 和 [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
 
-##### 前置要求
-
-1. **NVIDIA GPU 和驱动**
-   ```bash
-   # 检查 GPU 和 CUDA 版本
-   nvidia-smi
-   # 需要 CUDA 11.8 或更高版本
-   ```
-
-2. **NVIDIA Container Toolkit**
-   ```bash
-   # Ubuntu/Debian 安装
-   distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-   curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
-   curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
-     sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-     sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
-   sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
-   sudo systemctl restart docker
-
-   # 验证安装
-   docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
-   ```
-
-3. **Docker 和 Docker Compose**
-   - Docker Engine >= 20.10
-   - Docker Compose >= 2.0
-
-##### 快速开始
-
-1. **克隆仓库**
-   ```bash
-   git clone --depth 1 https://github.com/MillionMillionLi/AIGC-Identification-Toolkit.git
-   cd AIGC-Identification-Toolkit
-   ```
-
-2. **启动容器**（自动拉取预构建镜像）
+1. 启动容器
    ```bash
    docker compose up -d
    ```
+   首次启动会自动从 [DockerHub](https://hub.docker.com/r/millionmillionli/aigc-identification-toolkit) 拉取预构建镜像（约 8GB）
 
-   首次启动会自动从 DockerHub 拉取镜像（约 8GB），需要 5-10 分钟。
+2. （可选）准备 AI 生成模型
 
-3. **进入容器**
+   仅当需要使用 AI 生成内容并添加水印功能时才需要此步骤。
+
+   **需要下载的模型**：
+   - 图像生成：Stable Diffusion 2.1 (`stabilityai/stable-diffusion-2-1-base`)
+   - 视频生成：Wan2.1 (`Wan-AI/Wan2.1-T2V-1.3B-Diffusers`)
+   - 文本生成：Mistral 7B + PostMark词嵌入 (`mistralai/Mistral-7B-Instruct-v0.2`)
+   - 音频生成：Bark (`suno/bark`)
+
+   **模型存储位置**：
+
+   Docker会自动查找主机的 `~/.cache/huggingface/` 目录。如果你的模型在其他路径，需要修改 `docker-compose.yml`：
+
+   ```yaml
+   volumes:
+     # 将第一行的路径改为你的实际模型缓存路径
+     - /你的路径/.cache/huggingface:/cache/huggingface
+   ```
+   
+3. 进入容器
    ```bash
    docker exec -it aigc-watermark-toolkit bash
    ```
 
-4. **运行测试验证**
-   ```bash
-   # 容器内执行
-   python tests/test_unified_engine.py
-   ```
-
-##### 模型准备说明
-
-**首次运行时，容器会自动下载 AI 模型到主机的 `~/.cache/huggingface` 目录（约 35GB），需要一定时间。**
-
-如果你已经下载了模型，确保模型位于 `~/.cache/huggingface/`。如果模型在其他路径，修改 `docker-compose.yml`：
-
-```yaml
-volumes:
-  - /你的模型路径/.cache/huggingface:/cache/huggingface
-```
-
-**所需模型列表**：
-- 图像生成：Stable Diffusion 2.1 (`stabilityai/stable-diffusion-2-1-base`)
-- 视频生成：Wan2.1 (`Wan-AI/Wan2.1-T2V-1.3B-Diffusers`)
-- 文本生成：Mistral 7B (`mistralai/Mistral-7B-Instruct-v0.2`)
-- 音频生成：Bark (`suno/bark`)
 
 
 
@@ -291,16 +252,49 @@ mark_result = tool.extract(marked_content, 'text', operation='visible_mark')
 **核心特性**:
 -  **数据集**: W-Bench DISTORTION_1K（1000张图像）
 
--  **评估指标**: PSNR, SSIM, LPIPS, TPR，Bit accuracy, 置信度
+-  **评估指标**: PSNR, SSIM, LPIPS, TPR，Bit accuracy
 
 **快速使用**:
 ```bash
 python benchmarks/Image-Bench/run_benchmark.py
 ```
+
+**使用自定义数据集**:
+1. 准备图像数据：将PNG图像放入自定义目录（如 `benchmarks/Image-Bench/dataset/my_dataset/`）
+2. 修改配置 `configs/videoseal_distortion.yaml`：
+   ```yaml
+   dataset:
+     path: benchmarks/Image-Bench/dataset/my_dataset
+   ```
+**评估指标**
+| 指标类别 | 指标 | 判定阈值 | 指标说明 |
+|----------|------|----------|----------|
+| **质量** | PSNR | ≥ 35.0 dB | Peak Signal-to-Noise Ratio（峰值信噪比），越高越好 |
+| **质量** | SSIM | ≥ 0.95 | Structural Similarity Index（结构相似度），越接近 1 越好 |
+| **质量** | LPIPS | ≤ 0.015 | Learned Perceptual Similarity（感知相似度），越低越好 |
+| **鲁棒性** | TPR | ≥ 0.80 | True Positive Rate（检测成功率），越高表示鲁棒性越强 |
+| **鲁棒性** | Bit Accuracy | ≥ 0.85 | 水印比特准确率，决定解码结果与原始水印的接近程度 |
+
 **结果分析**：
-|  |  |  |
-| --- | --- | --- |
-| ![VideoSeal Avg Confidence Radar](benchmarks/Image-Bench/results/videoseal_distortion/videoseal_avg_confidence_radar.png) | ![VideoSeal Bit Accuracy Radar](benchmarks/Image-Bench/results/videoseal_distortion/videoseal_bit_accuracy_radar.png) | ![VideoSeal TPR Radar](benchmarks/Image-Bench/results/videoseal_distortion/videoseal_tpr_radar.png) |
+<table>
+  <tr>
+    <th>TPR</th>
+    <th>Bit Accuracy</th>
+    <th>质量评估指标</th>
+  </tr>
+  <tr>
+    <td><img src="benchmarks/Image-Bench/results/videoseal_distortion/videoseal_tpr_radar.png" alt="VideoSeal TPR Radar" /></td>
+    <td><img src="benchmarks/Image-Bench/results/videoseal_distortion/videoseal_bit_accuracy_radar.png" alt="VideoSeal Bit Accuracy Radar" /></td>
+    <td style="vertical-align: top; height: 100%;">
+      <table>
+        <tr><th>指标</th><th>数值</th><th style="white-space: nowrap;">达到阈值</th></tr>
+        <tr><td><strong>PSNR</strong></td><td>45.52 dB</td><td>✅</td></tr>
+        <tr><td><strong>SSIM</strong></td><td>0.9953</td><td>✅</td></tr>
+        <tr><td><strong>LPIPS</strong></td><td>0.0025</td><td>✅</td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
 **详细文档**: [benchmarks/Image-Bench/README.md](benchmarks/Image-Bench/README.md)
 
@@ -312,7 +306,6 @@ python benchmarks/Image-Bench/run_benchmark.py
 
 **核心特性**:
 - 📊 **数据集**: [AudioMark Dataset](https://drive.google.com/drive/folders/1037mBf4LoGq0CDxe6hYx5fNNv56AY_9e)
-- 🎯 **评估指标**: SNR, TPR (prob), TPR (BA), Bit Accuracy, 置信度
 - 🔧 **攻击类型**: 高斯噪声、背景噪声、量化、滤波、平滑、回声、MP3压缩
 
 **快速使用**:
@@ -320,10 +313,38 @@ python benchmarks/Image-Bench/run_benchmark.py
 python benchmarks/Audio-Bench/run_benchmark.py
 ```
 
+**使用自定义数据集**:
+1. 准备音频数据：将音频文件（支持WAV/MP3/FLAC/M4A）放入自定义目录
+2. 修改配置 `configs/audioseal_robustness.yaml`：
+   ```yaml
+   dataset:
+     path: benchmarks/Audio-Bench/dataset/my_audio_dataset
+   ```
+**评估指标**
+| 指标类别 | 指标 | 判定阈值 | 指标说明 |
+|----------|------|----------|----------|
+| **质量** | SNR | ≥ 20.0 dB | Signal-to-Noise Ratio，原音频 vs 水印音频，越高越好 |
+| **鲁棒性** | TPR (Detection Probability) | ≥ 0.80 | 以检测概率判定的真阳性率 |
+| **鲁棒性** | Bit Accuracy | ≥ 0.875 | 图案水印比特正确率，越高越好 |
 **结果分析**：
-| TPR (Detection Probability) | Avg Confidence | Bit Accuracy |
-| --- | --- | --- |
-| ![TPR prob](benchmarks/Audio-Bench/results/audioseal_robustness/audioseal_tpr_prob_radar.png) | ![Avg Confidence](benchmarks/Audio-Bench/results/audioseal_robustness/audioseal_avg_confidence_radar.png) | ![Bit Accuracy](benchmarks/Audio-Bench/results/audioseal_robustness/audioseal_bit_accuracy_radar.png) |
+<table>
+  <tr>
+    <th>TPR (Detection Probability)</th>
+    <th>Bit Accuracy</th>
+    <th>质量评估指标</th>
+  </tr>
+  <tr>
+    <td><img src="benchmarks/Audio-Bench/results/audioseal_robustness/audioseal_tpr_prob_radar.png" alt="AudioSeal TPR Probability Radar" /></td>
+    <td><img src="benchmarks/Audio-Bench/results/audioseal_robustness/audioseal_bit_accuracy_radar.png" alt="AudioSeal Bit Accuracy Radar" /></td>
+    <td style="vertical-align: top; height: 100%;">
+      <table>
+        <tr><th>指标</th><th>数值</th><th style="white-space: nowrap;">达到阈值</th></tr>
+        <tr><td><strong>SNR</strong></td><td>23</td><td>✅</td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
 
 **详细文档**: [benchmarks/Audio-Bench/README.md](benchmarks/Audio-Bench/README.md)
 
@@ -335,7 +356,6 @@ python benchmarks/Audio-Bench/run_benchmark.py
 
 **核心特性**:
 - 📊 **数据集**: [VideoMarkBench Dataset](https://www.kaggle.com/datasets/zhengyuanjiang/videomarkbench/data)
-- 🎯 **评估指标**: PSNR, SSIM, tLP, FNR, Bit Accuracy, 置信度
 - 🔧 **攻击类型**: 高斯噪声、模糊、JPEG压缩、裁剪、帧平均、帧交换、帧删除
 
 **快速使用**:
@@ -343,10 +363,44 @@ python benchmarks/Audio-Bench/run_benchmark.py
 python benchmarks/Video-Bench/run_benchmark.py
 ```
 
+**使用自定义数据集**:
+1. 准备视频数据：将视频文件（支持MP4/AVI/MOV/MKV）放入自定义目录，支持子目录
+2. 修改配置 `configs/videoseal_robustness.yaml`：
+   ```yaml
+   dataset:
+     path: benchmarks/Video-Bench/dataset/my_video_dataset
+   ```
+
+**评估指标**
+
+| 指标类别 | 指标 | 判定阈值 | 指标说明 |
+|----------|------|----------|----------|
+| **质量** | PSNR | ≥ 35.0 dB | Peak Signal-to-Noise Ratio，越高越好 |
+| **质量** | SSIM | ≥ 0.95 | Structural Similarity Index，越接近 1 越好 |
+| **质量** | tLP | ≤ 0.20 | Temporal LPIPS，衡量跨帧感知一致性，越低越好 |
+| **鲁棒性** | FNR | ≤ 0.01 | False Negative Rate，漏检率，越低表示鲁棒性越强 |
+| **鲁棒性** | Bit Accuracy | ≥ 0.85 | 解码比特准确率，越高越好 |
+
 **结果分析**：
-| FNR | Bit Accuracy | Avg Confidence |
-| --- | --- | --- |
-| ![FNR](benchmarks/Video-Bench/results/videoseal_robustness/videoseal_fnr_radar.png) | ![Bit Accuracy](benchmarks/Video-Bench/results/videoseal_robustness/videoseal_bit_accuracy_radar.png) | ![Avg Confidence](benchmarks/Video-Bench/results/videoseal_robustness/videoseal_avg_confidence_radar.png) |
+<table>
+  <tr>
+    <th>FNR</th>
+    <th>Bit Accuracy</th>
+    <th>质量评估指标</th>
+  </tr>
+  <tr>
+    <td><img src="benchmarks/Video-Bench/results/videoseal_robustness/videoseal_fnr_radar.png" alt="VideoSeal FNR Radar" /></td>
+    <td><img src="benchmarks/Video-Bench/results/videoseal_robustness/videoseal_bit_accuracy_radar.png" alt="VideoSeal Bit Accuracy Radar" /></td>
+    <td style="vertical-align: top; height: 100%;">
+      <table>
+        <tr><th>指标</th><th>数值</th><th style="white-space: nowrap;">达到阈值</th></tr>
+        <tr><td><strong>PSNR</strong></td><td>40.59</td><td>✅</td></tr>
+        <tr><td><strong>SSIM</strong></td><td>0.97</td><td>✅</td></tr>
+        <tr><td><strong>tLP</strong></td><td>0.001</td><td>✅</td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
 **详细文档**: [benchmarks/Video-Bench/README.md](benchmarks/Video-Bench/README.md)
 

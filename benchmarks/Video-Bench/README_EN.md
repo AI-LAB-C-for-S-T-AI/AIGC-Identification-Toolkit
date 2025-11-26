@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Dataset: VideoMarkBench](https://img.shields.io/badge/Dataset-VideoMarkBench-green.svg)](https://www.kaggle.com/datasets/zhengyuanjiang/videomarkbench/data)
 
-> Evaluate the robustness of video watermarking algorithms (VideoSeal) under various video attacks, based on VideoMarkBench dataset,.
+> Evaluate the robustness of video watermarking algorithms (VideoSeal) under various video attacks, based on VideoMarkBench dataset.
 
 ---
 
@@ -38,59 +38,62 @@ python benchmarks/Video-Bench/run_benchmark.py
 
 ## 📊 Evaluation Pipeline
 
-### Supported Attack Types (7 attacks × multiple strength levels)
-
-#### Frame-Level Perturbations
-
-Applied frame-by-frame to test spatial domain robustness:
+### Supported Attack Types
 
 | Attack Type | Strength Parameters | Description |
 |---------|---------|------|
-| **Gaussian Noise** | [0.01, 0.05, 0.10, 0.15, 0.20] | Gaussian noise (standard deviation σ, larger = stronger attack) |
-| **Gaussian Blur** | [0.1, 0.5, 1.0, 1.5] | Gaussian blur (kernel standard deviation σ, larger = stronger) |
-| **JPEG Compression** | [90, 80, 60, 40, 20] | JPEG quality factor (smaller = stronger attack) |
-| **Crop** | [0.98, 0.96, 0.94, 0.92, 0.90] | Crop then resize (retention ratio, smaller = stronger) |
+| **Gaussian Noise** | [0.01, 0.05, 0.10, 0.15, 0.20] | Frame-level: per-frame Gaussian noise (larger σ = stronger attack) |
+| **Gaussian Blur** | [0.1, 0.5, 1.0, 1.5] | Frame-level: per-frame Gaussian blur (kernel standard deviation σ) |
+| **JPEG Compression** | [90, 80, 60, 40, 20] | Frame-level: JPEG compression, lower quality = stronger distortion |
+| **Crop & Resize** | [0.98, 0.96, 0.94, 0.92, 0.90] | Frame-level: crop then scale back to original size (retention ratio) |
+| **Frame Average** | [1, 2, 3, 4, 5] | Video-level: sliding window frame averaging (larger window = stronger smoothing) |
+| **Frame Swap** | [0.00, 0.05, 0.10, 0.15, 0.20] | Video-level: randomly swap adjacent frames (probability p) |
+| **Frame Remove** | [0.00, 0.05, 0.10, 0.15, 0.20] | Video-level: randomly remove frames (probability p) |
 
-#### Video-Level Perturbations
-
-Leveraging temporal characteristics to test temporal domain robustness:
-
-| Attack Type | Strength Parameters | Description |
-|---------|---------|------|
-| **Frame Average** | [1, 2, 3, 4, 5] | Frame averaging (window size N, 1=no change, larger = stronger) |
-| **Frame Swap** | [0.00, 0.05, 0.10, 0.15, 0.20] | Random swap adjacent frames (probability p, larger = stronger) |
-| **Frame Remove** | [0.00, 0.05, 0.10, 0.15, 0.20] | Random frame removal (probability p, larger = stronger) |
-
-
+Total: **7 attacks × multiple strength levels**, covering both spatial and temporal distortions.
 
 ### Evaluation Metrics
 
-#### Quality Metrics
-- **PSNR (Peak Signal-to-Noise Ratio)**: Peak signal-to-noise ratio in dB, higher is better (>40dB is high quality)
-- **SSIM (Structural Similarity Index)**: Structural similarity, 0-1 range, closer to 1 is better (>0.98 is high quality)
-- **tLP (temporal LPIPS)**: Temporal consistency, perceptual difference between adjacent frames, lower is better (<0.01 is excellent)
-
-#### Robustness Metrics
-- **FNR (False Negative Rate)**: False negative rate, proportion of videos where watermark was not detected (0-1, lower is better)
-- **Bit Accuracy**: Bit accuracy, ratio of correctly extracted watermark bits to total bits (0-1, >0.9 is excellent)
-- **Average Confidence**: Average detection confidence, detection signal strength (0-1, higher is better)
+| Metric Category | Metric | Threshold | Description |
+|----------|------|----------|----------|
+| **Quality** | PSNR | ≥ 35.0 dB | Peak Signal-to-Noise Ratio, higher is better |
+| **Quality** | SSIM | ≥ 0.95 | Structural Similarity Index, closer to 1 is better |
+| **Quality** | tLP | ≤ 0.20 | Temporal LPIPS, measures cross-frame perceptual consistency, lower is better |
+| **Robustness** | FNR | ≤ 0.01 | False Negative Rate (miss detection rate), lower indicates stronger robustness |
+| **Robustness** | Bit Accuracy | ≥ 0.85 | Decoded bit accuracy, higher is better |
 
 ---
 
 ## 📈 Visualization Analysis
 
-
+Generate radar charts and quality panels for quick comparison:
 
 ```bash
 python benchmarks/Video-Bench/utils/plot_radar.py \
   benchmarks/Video-Bench/results/videoseal_robustness/metrics.json
 ```
 
-| FNR | Bit Accuracy | Avg Confidence |
-| --- | --- | --- |
-| ![FNR](results/videoseal_robustness/videoseal_fnr_radar.png) | ![Bit Accuracy](results/videoseal_robustness/videoseal_bit_accuracy_radar.png) | ![Avg Confidence](results/videoseal_robustness/videoseal_avg_confidence_radar.png) |
+<table>
+  <tr>
+    <th>FNR</th>
+    <th>Bit Accuracy</th>
+    <th>Quality Metrics</th>
+  </tr>
+  <tr>
+    <td><img src="results/videoseal_robustness/videoseal_fnr_radar.png" alt="VideoSeal FNR Radar" /></td>
+    <td><img src="results/videoseal_robustness/videoseal_bit_accuracy_radar.png" alt="VideoSeal Bit Accuracy Radar" /></td>
+    <td style="vertical-align: top; height: 100%;">
+      <table>
+        <tr><th>Metric</th><th>Value</th><th style="white-space: nowrap;">Meets Threshold</th></tr>
+        <tr><td><strong>PSNR</strong></td><td>40.59</td><td>✅</td></tr>
+        <tr><td><strong>SSIM</strong></td><td>0.97</td><td>✅</td></tr>
+        <tr><td><strong>tLP</strong></td><td>0.001</td><td>✅</td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
-Each chart displays **5 curves** corresponding to 5 attack strength levels (from weak to strong).
+> Each radar chart displays **5 curves** corresponding to 5 attack strength levels (from weak to strong).
 
 ---
 
@@ -104,4 +107,3 @@ This project is based on the following open source works:
 
 
 ---
-

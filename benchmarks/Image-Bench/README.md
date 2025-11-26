@@ -60,15 +60,14 @@ python benchmarks/Image-Bench/run_benchmark.py
 
 ### 评估指标
 
-#### 质量指标（原图 vs 水印图）
-- **PSNR** (Peak Signal-to-Noise Ratio): 峰值信噪比，越高越好（通常>40dB表示高质量）
-- **SSIM** (Structural Similarity Index): 结构相似性，范围0-1，越高越好
-- **LPIPS** (Learned Perceptual Similarity): 感知相似性，越低越好
 
-#### 鲁棒性指标（按攻击类型）
-- **TPR (True Positive Rate)**: 真阳性率，水印正确检测的比例（0-1）
-- **Bit Accuracy**: 位准确率，正确提取的水印比特数占总比特数的比例（0-1）
-- **Average Confidence**: 检测成功时的平均置信度
+| 指标类别 | 指标 | 判定阈值 | 指标说明 |
+|----------|------|----------|----------|
+| **质量** | PSNR | ≥ 35.0 dB | Peak Signal-to-Noise Ratio（峰值信噪比），越高越好 |
+| **质量** | SSIM | ≥ 0.95 | Structural Similarity Index（结构相似度），越接近 1 越好 |
+| **质量** | LPIPS | ≤ 0.015 | Learned Perceptual Similarity（感知相似度），越低越好 |
+| **鲁棒性** | TPR | ≥ 0.80 | True Positive Rate（检测成功率），越高表示鲁棒性越强 |
+| **鲁棒性** | Bit Accuracy | ≥ 0.85 | 水印比特准确率，决定解码结果与原始水印的接近程度 |
 
 ---
 
@@ -80,12 +79,25 @@ python benchmarks/Image-Bench/run_benchmark.py
 python benchmarks/Image-Bench/utils/plot_radar.py \
     benchmarks/Image-Bench/results/videoseal_distortion/metrics.json
 ```
-
-
-|  |  |  |
-| --- | --- | --- |
-| ![VideoSeal Avg Confidence Radar](results/videoseal_distortion/videoseal_avg_confidence_radar.png) | ![VideoSeal Bit Accuracy Radar](results/videoseal_distortion/videoseal_bit_accuracy_radar.png) | ![VideoSeal TPR Radar](results/videoseal_distortion/videoseal_tpr_radar.png) |
-
+<table>
+  <tr>
+    <th>TPR</th>
+    <th>Bit Accuracy</th>
+    <th>质量评估指标</th>
+  </tr>
+  <tr>
+    <td><img src="results/videoseal_distortion/videoseal_tpr_radar.png" alt="VideoSeal TPR Radar" /></td>
+    <td><img src="results/videoseal_distortion/videoseal_bit_accuracy_radar.png" alt="VideoSeal Bit Accuracy Radar" /></td>
+    <td style="vertical-align: top; height: 100%;">
+      <table>
+        <tr><th>指标</th><th>数值</th><th style="white-space: nowrap;">达到阈值</th></tr>
+        <tr><td><strong>PSNR</strong></td><td>45.52 dB</td><td>✅</td></tr>
+        <tr><td><strong>SSIM</strong></td><td>0.9953</td><td>✅</td></tr>
+        <tr><td><strong>LPIPS</strong></td><td>0.0025</td><td>✅</td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
 
 

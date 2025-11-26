@@ -84,13 +84,6 @@ METRICS_CONFIG = {
         'ylim': (0, 1.0),
         'yticks': [0.2, 0.4, 0.6, 0.8, 1.0],
         'normalize': False
-    },
-    'avg_confidence': {
-        'name': 'Average Confidence Score',
-        'filename': 'audioseal_avg_confidence_radar.png',
-        'ylim': (0, 1.0),
-        'yticks': [0.2, 0.4, 0.6, 0.8, 1.0],
-        'normalize': False
     }
 }
 
