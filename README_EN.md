@@ -45,6 +45,20 @@ This project provides an all-in-one open-source identification toolkit. Supporti
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+---
+
+## 📑 Table of Contents
+
+- [Getting Started](#getting-started)
+  - [Installation](#installation)
+- [Usage](#usage)
+- [Benchmarks](#benchmarks)
+  - [Image-Bench](#image-bench)
+  - [Audio-Bench](#audio-bench)
+  - [Video-Bench](#video-bench)
+
+---
+
 ## Getting Started
 
 ### Installation
@@ -96,41 +110,41 @@ This project provides an all-in-one open-source identification toolkit. Supporti
    export HF_HUB_OFFLINE=1
    export HF_ENDPOINT=https://hf-mirror.com
    ```
-#### 🐳 Docker Installation (Recommended)
+#### 🐳 Docker Installation 
 
 **Prerequisites**: Requires NVIDIA GPU and [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
 
-1. Start the container
+1. Pull the image
    ```bash
-   docker compose up -d
+   docker pull millionmillionli/aigc-identification-toolkit:latest
    ```
-   First launch will automatically pull the pre-built image from [DockerHub](https://hub.docker.com/r/millionmillionli/aigc-identification-toolkit) (~8GB)
 
-2. (Optional) Prepare AI generation models
+2. Run the container
+   ```bash
+   docker run -d --name aigc-watermark-toolkit \
+     --gpus all \
+     -v /path/to/your/.cache/huggingface:/cache/huggingface \ ## Change this path to your actual model cache path
+     -v $(pwd):/app \
+     -e HF_HOME=/cache/huggingface \
+     -e PYTHONPATH=/app \
+     -e CUDA_VISIBLE_DEVICES=0 \
+     --restart unless-stopped \
+     millionmillionli/aigc-identification-toolkit:latest \
+     tail -f /dev/null
+   ```
 
-   This step is only required if you need to use AI-generated content with watermarking.
+   (Optional) Prepare AI models, only required if you need to use AI-generated content with watermarking.
 
    **Required models**:
    - Image generation: Stable Diffusion 2.1 (`stabilityai/stable-diffusion-2-1-base`)
    - Video generation: Wan2.1 (`Wan-AI/Wan2.1-T2V-1.3B-Diffusers`)
    - Text generation: Mistral 7B + PostMark embeddings (`mistralai/Mistral-7B-Instruct-v0.2`)
    - Audio generation: Bark (`suno/bark`)
-
-   **Model storage location**:
-
-   Docker will automatically search for the host's `~/.cache/huggingface/` directory. If your models are in a different path, modify `docker-compose.yml`:
-
-   ```yaml
-   volumes:
-     # Change the first path to your actual model cache path
-     - /your/path/.cache/huggingface:/cache/huggingface
-   ```
-
 3. Enter the container
    ```bash
    docker exec -it aigc-watermark-toolkit bash
    ```
-
+**Advanced Usage**: For full configuration (benchmark mounting, read-only configs, etc.), use `docker-compose up -d` or check the `docker-compose.yml` file.
 
 
 

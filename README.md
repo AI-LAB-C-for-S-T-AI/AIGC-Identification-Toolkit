@@ -45,6 +45,20 @@
 
 <p align="right">(<a href="#readme-top">返回顶部</a>)</p>
 
+---
+
+## 📑 目录
+
+- [开始使用](#开始使用)
+  - [安装](#安装)
+- [使用方法](#使用方法)
+- [Benchmarks](#benchmarks)
+  - [Image-Bench](#image-bench)
+  - [Audio-Bench](#audio-bench)
+  - [Video-Bench](#video-bench)
+
+---
+
 ## 开始使用
 
 ### 安装
@@ -96,41 +110,41 @@
    export HF_HUB_OFFLINE=1
    export HF_ENDPOINT=https://hf-mirror.com
    ```
-#### 🐳 Docker 安装（推荐）
+#### 🐳 Docker 安装
 
 **前置要求**：需要 NVIDIA GPU 和 [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
 
-1. 启动容器
+1. 拉取镜像
    ```bash
-   docker compose up -d
+   docker pull millionmillionli/aigc-identification-toolkit:latest
    ```
-   首次启动会自动从 [DockerHub](https://hub.docker.com/r/millionmillionli/aigc-identification-toolkit) 拉取预构建镜像（约 8GB）
 
-2. （可选）准备 AI 生成模型
+2. 运行容器
+   ```bash
+   docker run -d --name aigc-watermark-toolkit \
+     --gpus all \
+     -v /path/to/your/.cache/huggingface:/cache/huggingface \ ## 将这一行的路径改为你的实际模型缓存路径
+     -v $(pwd):/app \
+     -e HF_HOME=/cache/huggingface \
+     -e PYTHONPATH=/app \
+     -e CUDA_VISIBLE_DEVICES=0 \
+     --restart unless-stopped \
+     millionmillionli/aigc-identification-toolkit:latest \
+     tail -f /dev/null
+   ```
 
-   仅当需要使用 AI 生成内容并添加水印功能时才需要此步骤。
-
+   (可选)准备AI模型,仅当需要使用 AI 生成内容并添加水印功能时才需要此步骤。
+ 
    **需要下载的模型**：
    - 图像生成：Stable Diffusion 2.1 (`stabilityai/stable-diffusion-2-1-base`)
    - 视频生成：Wan2.1 (`Wan-AI/Wan2.1-T2V-1.3B-Diffusers`)
    - 文本生成：Mistral 7B + PostMark词嵌入 (`mistralai/Mistral-7B-Instruct-v0.2`)
    - 音频生成：Bark (`suno/bark`)
-
-   **模型存储位置**：
-
-   Docker会自动查找主机的 `~/.cache/huggingface/` 目录。如果你的模型在其他路径，需要修改 `docker-compose.yml`：
-
-   ```yaml
-   volumes:
-     # 将第一行的路径改为你的实际模型缓存路径
-     - /你的路径/.cache/huggingface:/cache/huggingface
-   ```
-   
 3. 进入容器
    ```bash
    docker exec -it aigc-watermark-toolkit bash
    ```
-
+**进阶使用**：如需完整配置（benchmark挂载、只读配置等），可使用 `docker-compose up -d`或查看`docker-compose.yml` 文件。
 
 
 
