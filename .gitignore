@@ -56,7 +56,6 @@ logs/
 *.pickle
 
 # Model files
-models/
 checkpoints/
 
 # Temporary files
@@ -81,7 +80,7 @@ venv.bak/
 
 # 本地缓存和输出（防止提交大文件）
 .cache/
-models/
+
 outputs/
 demo_uploads/
 benchmarks/Image-Bench/dataset/W-Bench/
